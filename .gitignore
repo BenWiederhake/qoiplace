@@ -1,0 +1,5 @@
+mysecrets.py
+*.png
+*.qoi
+__pycache__/
+state.json
