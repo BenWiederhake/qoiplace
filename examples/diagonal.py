@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 from mysecrets import API_ID, API_HASH
-from telethon.sync import TelegramClient, events
 import inspect
+import multi
 import os
 import sys
 import time
@@ -51,19 +51,7 @@ def determine_commands(qoifile_path):
 
 def run(qoifile_path):
     cmds = determine_commands(qoifile_path)
-    print(f"About to execute the following {len(cmds)} commands:")
-    for cmd in cmds:
-        print(f"  {cmd}")
-    user_decision = input("Execute? [Y/n] ")
-    if user_decision not in ["", "Y", "y", "J", "j"]:
-        print("Aborting ...")
-        exit(1)
-    with TelegramClient("mybot", API_ID, API_HASH) as client:
-        for cmd in cmds:
-            print(f"Sending command {cmd} ...")
-            client.send_message(QOIPLACE_BOT_NAME, cmd)
-            print("Waiting 60 seconds before setting the next byte, due to ratelimit ...")
-            time.sleep(60)
+    multi.run_commands(cmds)
 
 
 if __name__ == "__main__":
