@@ -100,6 +100,11 @@ def decode(qoidata, w, h):
         chunk_type, rgb = qoi_eater.consume()
         if chunk_type == ChunkType.NONE:
             break
+        # If some jester fills the entire 1 MB with maximal QOI_OP_RUN-chunks, then we would end up writing 62 million pixels.
+        # Limit the maximum impact of that:
+        if qoi_eater.px_offset > 3 * qoi_eater.w * qoi_eater.h:
+            # Yeah, we're *far* beyond anything reasonable. Just stop processing here.
+            break
         for _ in range(old_px_offset, qoi_eater.px_offset):
             data.append(rgb)
     missing = qoi_eater.w * qoi_eater.h - len(data)
@@ -116,12 +121,43 @@ def decode(qoidata, w, h):
     return img
 
 
+def decode_to_indices(qoidata, w, h):
+    qoi_eater = QoiEater(w, h, qoidata)
+    indices = []
+    while True:
+        old_px_offset = qoi_eater.px_offset
+        old_data_offset = qoi_eater.data_offset
+        chunk_type, _ = qoi_eater.consume()
+        if chunk_type == ChunkType.NONE:
+            break
+        # If some jester fills the entire 1 MB with maximal QOI_OP_RUN-chunks, then we would end up writing 62 million pixels.
+        # Limit the maximum impact of that:
+        if qoi_eater.px_offset > 3 * qoi_eater.w * qoi_eater.h:
+            # Yeah, we're *far* beyond anything reasonable. Just stop processing here.
+            break
+        for _ in range(old_px_offset, qoi_eater.px_offset):
+            indices.append(old_data_offset)
+    missing = qoi_eater.w * qoi_eater.h - len(indices)
+    if missing != 0:
+        if VERBOSE:
+            print(f"Expect {qoi_eater.w * qoi_eater.h} pixels, got {len(indices)} instead")
+            print(f"Padding with {missing} invalid indices?!?!")
+        if missing > 0:
+            indices.extend([-1] * missing)
+        else:
+            indices = indices[: qoi_eater.w * qoi_eater.h]
+    assert len(indices) == qoi_eater.w * qoi_eater.h, (len(indices), qoi_eater.w, qoi_eater.h)
+    return indices
+
+
 def run(qoifile, pngfile):
     with open(qoifile, "rb") as fp:
         all_qoidata = fp.read()
     qoidata = all_qoidata[14 : -8]  # Skip header, skip footer
     img = decode(qoidata, 512, 512)
     img.save(pngfile, "png")
+    indices = decode_to_indices(qoidata, 512, 512)
+    print(indices[:50])
 
 
 if __name__ == "__main__":

@@ -15,3 +15,7 @@ Then, have fun. Maybe try out the following examples to see what they're doing.
 # `setpixel.py`
 
 Sets the first pixel to red (#FF0000).
+
+# `diagonal.py`
+
+Draws a diagonal from a configurable point in a configurable color towards down-left.
