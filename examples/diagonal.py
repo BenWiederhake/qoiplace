@@ -20,6 +20,13 @@ YSTART = 250
 COLOR = (124, 74, 136)  # Randomly chosen
 
 
+def cmds_to_make(qoidata, index, value):
+    if qoidata[index] != value:
+        qoidata[index] = value
+        return [f"{index} {value}"]
+    return []
+
+
 def determine_commands(qoifile_path):
     with open(qoifile_path, "rb") as fp:
         qoidata = bytearray(fp.read())
@@ -29,17 +36,13 @@ def determine_commands(qoifile_path):
         offset = (XSTART - i) + 512 * (YSTART + i)
         assert 0 <= offset < 512 * 512
         index_start = current_indices[offset]
-        if qoidata[index_start] != 0xFE:
-            qoidata[index_start] = 0xFE
-            write_commands.append(f"{index_start} {0xFE}")
-        if qoidata[index_start + 1] != COLOR[0]:
-            write_commands.append(f"{index_start + 1} {COLOR[0]}")
-        if qoidata[index_start + 2] != COLOR[1]:
-            write_commands.append(f"{index_start + 2} {COLOR[1]}")
-        if qoidata[index_start + 3] != COLOR[2]:
-            write_commands.append(f"{index_start + 3} {COLOR[2]}")
-        if qoidata[index_start + 4] != 0x40:
-            write_commands.append(f"{index_start + 4} {0x40}")
+        print(f"before: {qoidata[index_start : index_start + 5]}")
+        write_commands.extend(cmds_to_make(qoidata, index_start, 0xFE))
+        write_commands.extend(cmds_to_make(qoidata, index_start + 1, COLOR[0]))
+        write_commands.extend(cmds_to_make(qoidata, index_start + 2, COLOR[1]))
+        write_commands.extend(cmds_to_make(qoidata, index_start + 3, COLOR[2]))
+        write_commands.extend(cmds_to_make(qoidata, index_start + 4, 0x40))
+        print(f"after: {qoidata[index_start : index_start + 5]}")
         # Need to re-evaluate indices, because everything afterwards might have just shifted.
     return write_commands
 

@@ -32,14 +32,15 @@ class QoiEater:
         self.h = h
         self.data_offset = 0
         self.px_offset = 0
-        self.table = [(0, 0, 0)] * 64
-        self.last = (0, 0, 0)
+        self.table = [(0, 0, 0, 0)] * 64
+        self.last = (0, 0, 0, 255)
+        # Yes, the default alpha is different, which affects the table indices. Ugh.
 
-    def see(self, rgb):
-        self.last = rgb
-        r, g, b = rgb
-        index_position = (r * 3 + g * 5 + b * 7 + 255 * 11) % 64
-        self.table[index_position] = rgb
+    def see(self, rgba):
+        self.last = rgba
+        r, g, b, a = rgba
+        index_position = (r * 3 + g * 5 + b * 7 + a * 11) % 64
+        self.table[index_position] = rgba
 
     def consumebyte(self):
         if self.data_offset >= len(self.qoidata):
@@ -48,42 +49,41 @@ class QoiEater:
         self.data_offset += 1
         return byte_value
 
-    def consume(self) -> (ChunkType, Tuple[int, int, int]):
+    def consume(self) -> (ChunkType, Tuple[int, int, int, int]):
         if self.data_offset >= len(self.qoidata):
-            return (ChunkType.NONE, (0, 0, 0))
+            return (ChunkType.NONE, (0, 0, 0, 0))
         nextbyte = self.consumebyte()
         self.px_offset += 1
         if nextbyte == 0xFE:
-            rgb = (self.consumebyte(), self.consumebyte(), self.consumebyte())
-            self.see(rgb)
-            return (ChunkType.QOI_OP_RGB, rgb)
+            rgba = (self.consumebyte(), self.consumebyte(), self.consumebyte(), self.last[3])
+            self.see(rgba)
+            return (ChunkType.QOI_OP_RGB, rgba)
         if nextbyte == 0xFF:
-            rgb = (self.consumebyte(), self.consumebyte(), self.consumebyte())
-            self.consumebyte() # Ignore alpha
-            self.see(rgb)
-            return (ChunkType.QOI_OP_RGBA, rgb)
+            rgba = (self.consumebyte(), self.consumebyte(), self.consumebyte(), self.consumebyte())
+            self.see(rgba)
+            return (ChunkType.QOI_OP_RGBA, rgba)
         if (nextbyte & 0xC0) == 0x00:
             index_position = nextbyte & 0x3F
-            rgb = self.table[index_position]
-            self.see(rgb)
-            return (ChunkType.QOI_OP_INDEX, rgb)
+            rgba = self.table[index_position]
+            self.see(rgba)
+            return (ChunkType.QOI_OP_INDEX, rgba)
         if (nextbyte & 0xC0) == 0x40:
             dr = ((nextbyte >> 4) & 0b11) - 2
             dg = ((nextbyte >> 2) & 0b11) - 2
             db = ((nextbyte >> 0) & 0b11) - 2
-            r, g, b = self.last
-            rgb = (r + dr) % 256, (g + dg) % 256, (b + db) % 256
-            self.see(rgb)
-            return (ChunkType.QOI_OP_DIFF, rgb)
+            r, g, b, a = self.last
+            rgba = (r + dr) % 256, (g + dg) % 256, (b + db) % 256, a
+            self.see(rgba)
+            return (ChunkType.QOI_OP_DIFF, rgba)
         if (nextbyte & 0xC0) == 0x80:
             dg = (nextbyte & 0x3F) - 32
             xy = self.consumebyte()
             dr = ((xy >> 4) & 0x0F) - 8 + dg
             db = ((xy >> 0) & 0x0F) - 8 + dg
-            r, g, b = self.last
-            rgb = (r + dr) % 256, (g + dg) % 256, (b + db) % 256
-            self.see(rgb)
-            return (ChunkType.QOI_OP_LUMA, rgb)
+            r, g, b, a = self.last
+            rgba = (r + dr) % 256, (g + dg) % 256, (b + db) % 256, a
+            self.see(rgba)
+            return (ChunkType.QOI_OP_LUMA, rgba)
         if (nextbyte & 0xC0) == 0xC0:
             # Bias of one is already included!
             self.px_offset += nextbyte & 0x3F
@@ -97,7 +97,8 @@ def decode(qoidata, w, h):
     data = []
     while True:
         old_px_offset = qoi_eater.px_offset
-        chunk_type, rgb = qoi_eater.consume()
+        chunk_type, rgba = qoi_eater.consume()
+        rgb = rgba[:3]
         if chunk_type == ChunkType.NONE:
             break
         # If some jester fills the entire 1 MB with maximal QOI_OP_RUN-chunks, then we would end up writing 62 million pixels.
