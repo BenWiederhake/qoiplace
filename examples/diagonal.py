@@ -29,7 +29,9 @@ def cmds_to_make(qoidata, index, value):
 
 def determine_commands(qoifile_path):
     with open(qoifile_path, "rb") as fp:
-        qoidata = bytearray(fp.read())
+        qoidata_with_header = bytearray(fp.read())
+    qoidata = qoidata_with_header[14 : -8]
+    assert len(qoidata) == 512 * 512 * 4, len(qoidata)
     write_commands = []
     for i in range(10):
         current_indices = myqoi.decode_to_indices(qoidata, 512, 512)
