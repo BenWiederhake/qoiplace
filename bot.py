@@ -184,7 +184,7 @@ async def null(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     store = Store.get_singleton()
     try:
         index = int(update.message.text.split(" ")[1])
-        store.atomic_store.force_null_byte(index)
+        store.force_null_byte(index)
         success = True
     except BaseException as e:
         exception = e
