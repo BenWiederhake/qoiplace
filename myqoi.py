@@ -49,7 +49,7 @@ class QoiEater:
         self.data_offset += 1
         return byte_value
 
-    def consume(self) -> (ChunkType, Tuple[int, int, int, int]):
+    def consume(self) -> Tuple[ChunkType, Tuple[int, int, int, int]]:
         if self.data_offset >= len(self.qoidata):
             return (ChunkType.NONE, (0, 0, 0, 0))
         nextbyte = self.consumebyte()

@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
-import atomic_store
 import datetime
 import io
 import logging
-import myqoi
-import mysecrets
 import time
 
 from telegram import InputMediaDocument, Update
 from telegram.ext import filters, Application, CommandHandler, MessageHandler, ContextTypes
+import atomic_store
+
+import myqoi
+import mysecrets
 
 
 CACHED_STORE = None
@@ -49,6 +50,7 @@ class Store:
             self.atomic_store.value["history"] = []  # Tuples of (UserID, time, index, value)
         self.dirty = False
 
+    @staticmethod
     def get_singleton():
         global CACHED_STORE
         if CACHED_STORE is None:
@@ -64,8 +66,7 @@ class Store:
 
     def ban(self, user_id, ban_time):
         now = time.time()
-        if ban_time < 0:
-            ban_time = 0
+        ban_time = max(0, ban_time)
         self.atomic_store.value["users_times"][user_id] = now + ban_time
 
     def write_byte(self, index, byte_value, user_id) -> float:  # number of seconds left (negative if successful, positive otherwise)
@@ -104,18 +105,18 @@ class Store:
         return self.atomic_store.value["bytes_list"]
 
     def get_num_users(self):
-        stats = dict(old=0, current=0, banned=0)
+        user_stats = dict(old=0, current=0, banned=0)
         now = time.time()
         ancient_threshold = now - ANCIENT_OFFSET_SECONDS
         print(f"Now processing: {self.atomic_store.value['users_times'].values()}")
         for last_write in self.atomic_store.value["users_times"].values():
             if last_write < ancient_threshold:
-                stats["old"] += 1
+                user_stats["old"] += 1
             elif last_write > now:
-                stats["banned"] += 1
+                user_stats["banned"] += 1
             else:
-                stats["current"] += 1
-        return stats
+                user_stats["current"] += 1
+        return user_stats
 
     def str_stats(self):
         return f"{self.get_num_bytes_written()} bytes written, known users {self.get_num_users()}"
@@ -266,7 +267,7 @@ def run() -> None:
     job_queue = application.job_queue
     store = Store.get_singleton()
     print(f"Starting with {store.str_stats()}")
-    job_minute = job_queue.run_repeating(swallow_store, interval=60, first=10, data=store)
+    job_queue.run_repeating(swallow_store, interval=60, first=10, data=store)
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)

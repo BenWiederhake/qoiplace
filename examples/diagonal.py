@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 
 import inspect
-import multi
 import os
 import sys
-import time
+
+import multi
 
 # Hacky way to use existing "myqoi" implementation:
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir) 
+sys.path.insert(0, parentdir)
 import myqoi
 
-QOIPLACE_BOT_NAME = "@QoiPlaceBot"
 VERBOSE = True
 XSTART = 30
 YSTART = 250

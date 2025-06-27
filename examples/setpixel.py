@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-from mysecrets import API_ID, API_HASH
-from telethon.sync import TelegramClient, events
 import time
+
+from telethon.sync import TelegramClient
+
+from mysecrets import API_ID, API_HASH
+
 
 QOIPLACE_BOT_NAME = "@QoiPlaceBot"
 
