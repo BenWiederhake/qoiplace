@@ -6,7 +6,13 @@ import logging
 import time
 
 from telegram import InputMediaDocument, Update
-from telegram.ext import filters, Application, CommandHandler, MessageHandler, ContextTypes
+from telegram.ext import (
+    filters,
+    Application,
+    CommandHandler,
+    MessageHandler,
+    ContextTypes,
+)
 import atomic_store
 
 import myqoi
@@ -34,7 +40,8 @@ We live in a society, so please be excellent. In particular:
 
 You're very much invited to coordinate and automate. Have fun! :D
 """
-QOI_PREAMBLE = b"qoif" + bytes([0, 0, 2, 0, 0, 0, 2, 0, 3, 0])  # QOI, 512 wide, 512 high, 3 channels, sRGB.
+# QOI, 512 wide, 512 high, 3 channels, sRGB.
+QOI_PREAMBLE = b"qoif" + bytes([0, 0, 2, 0, 0, 0, 2, 0, 3, 0])
 QOI_EPILOGUE = bytes([0, 0, 0, 0, 0, 0, 0, 1])
 
 
@@ -47,7 +54,8 @@ class Store:
         if "bytes_list" not in self.atomic_store.value:
             self.atomic_store.value["bytes_list"] = [0] * BUFFER_BYTE_LENGTH
         if "history" not in self.atomic_store.value:
-            self.atomic_store.value["history"] = []  # Tuples of (UserID, time, index, value)
+            # Tuples of (UserID, time, index, value)
+            self.atomic_store.value["history"] = []
         self.dirty = False
 
     @staticmethod
@@ -69,7 +77,8 @@ class Store:
         ban_time = max(0, ban_time)
         self.atomic_store.value["users_times"][user_id] = now + ban_time
 
-    def write_byte(self, index, byte_value, user_id) -> float:  # number of seconds left (negative if successful, positive otherwise)
+    # number of seconds left (negative if successful, positive otherwise)
+    def write_byte(self, index, byte_value, user_id) -> float:
         user_id = str(user_id)
         now = time.time()
         if not (0 <= index < BUFFER_BYTE_LENGTH):
@@ -155,18 +164,22 @@ async def start(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def admin(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     """Sends explanation on how to use the bot."""
-    await update.message.reply_text("""
+    await update.message.reply_text(
+        """
 /admin
 /ban USER_ID [TIME_SECONDS]
 /sigh
 /stats
-    """)
+"""
+    )
 
 
 async def stats(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.effective_user.id != mysecrets.OWNER_ID:
         return
-    await update.message.reply_text(f"Current stats: {Store.get_singleton().str_stats()}")
+    await update.message.reply_text(
+        f"Current stats: {Store.get_singleton().str_stats()}"
+    )
 
 
 async def sigh(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -204,18 +217,24 @@ async def ban(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         int_parts = [int(p) for p in msg_parts]
     except:
-        await update.message.reply_text(f"Couldn't convert some part to int?! >>{msg_parts}<<")
+        await update.message.reply_text(
+            f"Couldn't convert some part to int?! >>{msg_parts}<<"
+        )
         return
     if len(int_parts) == 1:
         int_parts.append(TYPICAL_BAN_LENGTH)
     elif len(int_parts) == 2:
         pass
     else:
-        await update.message.reply_text(f"Need only 1 or 2 parts `/ban USER_ID [TIME_SECONDS]` , instead got {len(int_parts)}<<")
+        await update.message.reply_text(
+            f"Need only 1 or 2 parts `/ban USER_ID [TIME_SECONDS]` , instead got {len(int_parts)}<<"
+        )
         return
     store = Store.get_singleton()
     store.ban(*int_parts)
-    await update.message.reply_text(f"User banned. New stats: {Store.get_singleton().str_stats()}")
+    await update.message.reply_text(
+        f"User banned. New stats: {Store.get_singleton().str_stats()}"
+    )
 
 
 async def set_byte(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -229,27 +248,38 @@ async def set_byte(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
         except ValueError:
             int_parts = None
     if int_parts is None:
-        await update.message.reply_text("I can't interpret that. Just write something like \"456789 123\" (without the quotation marks) to set the 456789th byte to 123. See /start for more explanation.")
+        await update.message.reply_text(
+            'I can\'t interpret that. Just write something like "456789 123" (without the quotation marks) to set the 456789th byte to 123. See /start for more explanation.'
+        )
         return
     index, value = int_parts
     if not (0 <= index < BUFFER_BYTE_LENGTH):
-        await update.message.reply_text(f"The first number is the byte offset of the buffer, which has length {BUFFER_BYTE_LENGTH:,}. That means that {index} won't work. See /start for more explanation.")
+        await update.message.reply_text(
+            f"The first number is the byte offset of the buffer, which has length {BUFFER_BYTE_LENGTH:,}. That means that {index} won't work. See /start for more explanation."
+        )
         return
     if not (0 <= value < 256):
-        await update.message.reply_text(f"The second number is the new byte value you want to write, which must be between 0 and 255 inclusively. That means that {value} won't work. See /start for more explanation.")
+        await update.message.reply_text(
+            f"The second number is the new byte value you want to write, which must be between 0 and 255 inclusively. That means that {value} won't work. See /start for more explanation."
+        )
         return
     store = Store.get_singleton()
     remaining_wait = store.write_byte(index, value, update.effective_user.id)
     if remaining_wait > 0:
-        await update.message.reply_text(f"Sorry, you should have waited {remaining_wait} more seconds. Timeout has been reset to at least {PLACE_TIMEOUT_SECONDS}.")
+        await update.message.reply_text(
+            f"Sorry, you should have waited {remaining_wait} more seconds. Timeout has been reset to at least {PLACE_TIMEOUT_SECONDS}."
+        )
     else:
-        await update.message.reply_text(f"Done, {update.effective_user.first_name}! You should see the result in the common channel soon.")
+        await update.message.reply_text(
+            f"Done, {update.effective_user.first_name}! You should see the result in the common channel soon."
+        )
 
 
 def run() -> None:
     # Enable logging
     logging.basicConfig(
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
     )
 
     # Create the Application and pass it your bot's token.

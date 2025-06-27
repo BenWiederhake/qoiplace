@@ -55,11 +55,21 @@ class QoiEater:
         nextbyte = self.consumebyte()
         self.px_offset += 1
         if nextbyte == 0xFE:
-            rgba = (self.consumebyte(), self.consumebyte(), self.consumebyte(), self.last[3])
+            rgba = (
+                self.consumebyte(),
+                self.consumebyte(),
+                self.consumebyte(),
+                self.last[3],
+            )
             self.see(rgba)
             return (ChunkType.QOI_OP_RGB, rgba)
         if nextbyte == 0xFF:
-            rgba = (self.consumebyte(), self.consumebyte(), self.consumebyte(), self.consumebyte())
+            rgba = (
+                self.consumebyte(),
+                self.consumebyte(),
+                self.consumebyte(),
+                self.consumebyte(),
+            )
             self.see(rgba)
             return (ChunkType.QOI_OP_RGBA, rgba)
         if (nextbyte & 0xC0) == 0x00:
@@ -141,20 +151,26 @@ def decode_to_indices(qoidata, w, h):
     missing = qoi_eater.w * qoi_eater.h - len(indices)
     if missing != 0:
         if VERBOSE:
-            print(f"Expect {qoi_eater.w * qoi_eater.h} pixels, got {len(indices)} instead")
+            print(
+                f"Expect {qoi_eater.w * qoi_eater.h} pixels, got {len(indices)} instead"
+            )
             print(f"Padding with {missing} invalid indices?!?!")
         if missing > 0:
             indices.extend([-1] * missing)
         else:
             indices = indices[: qoi_eater.w * qoi_eater.h]
-    assert len(indices) == qoi_eater.w * qoi_eater.h, (len(indices), qoi_eater.w, qoi_eater.h)
+    assert len(indices) == qoi_eater.w * qoi_eater.h, (
+        len(indices),
+        qoi_eater.w,
+        qoi_eater.h,
+    )
     return indices
 
 
 def run(qoifile, pngfile):
     with open(qoifile, "rb") as fp:
         all_qoidata = fp.read()
-    qoidata = all_qoidata[14 : -8]  # Skip header, skip footer
+    qoidata = all_qoidata[14:-8]  # Skip header, skip footer
     img = decode(qoidata, 512, 512)
     img.save(pngfile, "png")
     indices = decode_to_indices(qoidata, 512, 512)
