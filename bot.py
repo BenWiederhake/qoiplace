@@ -87,6 +87,16 @@ class Store:
         self.dirty = True
         return -1
 
+    def force_null_byte(self, index) -> bool:
+        now = time.time()
+        if not (0 <= index < BUFFER_BYTE_LENGTH):
+            return False
+        self.atomic_store.value["users_times"][""] = now
+        self.atomic_store.value["history"].append(["", now, index, 0])
+        self.atomic_store.value["bytes_list"][index] = 0
+        self.dirty = True
+        return True
+
     def get_num_bytes_written(self):
         return len(self.atomic_store.value["history"])
 
@@ -165,6 +175,23 @@ async def sigh(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("Reset")
 
 
+async def null(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.effective_user.id != mysecrets.OWNER_ID:
+        return
+    success = False
+    exception = None
+    try:
+        index = int(update.message.text.split(" ")[1])
+        self.atomic_store.force_null_byte(index)
+        success = True
+    except BaseException as e:
+        exception = e
+    if success:
+        await update.message.reply_text("Done")
+    else:
+        await update.message.reply_text(f"Failed! Error: {exception}")
+
+
 async def ban(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.effective_user.id != mysecrets.OWNER_ID:
         return
@@ -231,6 +258,7 @@ def run() -> None:
     application.add_handler(CommandHandler("stats", stats))
     application.add_handler(CommandHandler("sigh", sigh))
     application.add_handler(CommandHandler("ban", ban))
+    application.add_handler(CommandHandler("null", null))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, set_byte))
 
     job_queue = application.job_queue
