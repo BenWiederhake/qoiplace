@@ -171,7 +171,8 @@ async def stats(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
 async def sigh(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.effective_user.id != mysecrets.OWNER_ID:
         return
-    self.atomic_store.value["users_times"][mysecrets.OWNER_ID] = 0
+    store = Store.get_singleton()
+    store.atomic_store.value["users_times"][mysecrets.OWNER_ID] = 0
     await update.message.reply_text("Reset")
 
 
@@ -180,9 +181,10 @@ async def null(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     success = False
     exception = None
+    store = Store.get_singleton()
     try:
         index = int(update.message.text.split(" ")[1])
-        self.atomic_store.force_null_byte(index)
+        store.atomic_store.force_null_byte(index)
         success = True
     except BaseException as e:
         exception = e
