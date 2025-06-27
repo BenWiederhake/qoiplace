@@ -24,10 +24,10 @@ def run_commands(cmds, ask_user=True):
             print("Aborting ...")
             exit(1)
     with TelegramClient("mybot", API_ID, API_HASH) as client:
-        for cmd in cmds:
-            print(f"Sending command {cmd} ...")
+        for i, cmd in enumerate(cmds):
+            print(f"Sending command {i+1}/{len(cmds)}: \"{cmd}\" ...")
             client.send_message(QOIPLACE_BOT_NAME, cmd)
-            print("Waiting 60 seconds before setting the next byte, due to ratelimit ...")
+            print("  Waiting 60 seconds before setting the next byte, due to ratelimit ...")
             time.sleep(60)
 
 
