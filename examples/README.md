@@ -16,6 +16,10 @@ Then, have fun. Maybe try out the following examples to see what they're doing.
 
 Sets the first pixel to red (#FF0000).
 
+# `multi.py`
+
+Blindly executes some commands. Note that this doesn't check for the bot's response, but the timeouts should be good enough.
+
 # `diagonal.py`
 
 Draws a diagonal from a configurable point in a configurable color towards down-left.

@@ -12,11 +12,18 @@ In particular:
 
 ## Table of Contents
 
+- [Quickstart](#quickstart): How to draw your very first pixels
 - [Install](#install): How to set up your own "server"
 - [Usage](#usage): How to interact, how to use the examples
 - [TODOs](#todos): What's left to be done
 - [NOTDOs](#notdos): What is definitely out of scope
 - [Contribute](#contribute): Contribute!
+
+## Quickstart
+
+Go to [@QoiPlaceBot](https://t.me/QoiPlaceBot), send him something like "12 34" (i.e. set the byte with index 12 to value 34), and see the result a bit later in [QoiPlace](https://t.me/qoiplace)! Technically, that's already everything.
+
+Computing these indices and byte values by hand might be quite cumbersome, so you might enjoy some kind of automation as seen in the [examples](https://github.com/BenWiederhake/qoiplace/tree/master/examples#telethon) folder. Try running `setpixel.py`, and watch the first pixel turning red!
 
 ## Install
 
